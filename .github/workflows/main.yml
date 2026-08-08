@@ -1,0 +1,61 @@
+name: Build Krishna Marketing APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "KrishnaMarketing_App_Part7.zip"
+      - ".github/workflows/main.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Part 7
+        run: |
+          mkdir app-project
+          unzip -q KrishnaMarketing_App_Part7.zip -d app-project
+          echo "Extracted files:"
+          find app-project -maxdepth 3 -type f | head -100
+
+      - name: Find Android project
+        run: |
+          PROJECT_DIR=$(find app-project -name settings.gradle -o -name settings.gradle.kts | head -1 | xargs -r dirname)
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "Android project not found"
+            find app-project -maxdepth 4 -type f
+            exit 1
+          fi
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Make Gradle executable
+        run: |
+          chmod +x "$PROJECT_DIR/gradlew"
+
+      - name: Build Debug APK
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Find APK
+        run: |
+          find "$PROJECT_DIR/app/build/outputs/apk" -type f -name "*.apk" -print
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KrishnaMarketing-debug-apk
+          path: "${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/*.apk"
