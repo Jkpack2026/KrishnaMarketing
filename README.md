@@ -1,11 +1,9 @@
 name: Build Krishna Marketing APK
 
 on:
-  workflow_dispatch:
   push:
-    paths:
-      - "KrishnaMarketing_App_Part7.zip"
-      - ".github/workflows/main.yml"
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,36 +15,27 @@ jobs:
 
       - name: Extract Part 7
         run: |
-          mkdir app-project
-          unzip -q KrishnaMarketing_App_Part7.zip -d app-project
-          echo "Project files:"
-          find app-project -maxdepth 3 -type f
+          mkdir -p app-project
+          unzip -o KrishnaMarketing_App_Part7.zip -d app-project
 
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Gradle
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.7"
+          gradle-version: '8.7'
 
       - name: Build Debug APK
         working-directory: app-project
-        run: |
-          gradle assembleDebug --no-daemon
-
-      - name: Find APK
-        run: |
-          find app-project/app/build/outputs/apk -type f -name "*.apk" -print
+        run: gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KrishnaMarketing-debug-apk
-          path: app-project/app/build/outputs/apk/debug/*.apk
+          name: Krishna-Marketing-debug-APK
+          path: app-project/app/build/outputs/apk/debug/app-debug.apk
+          
